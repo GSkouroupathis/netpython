@@ -18,10 +18,10 @@ if __name__ == '__main__':
         to DESTINATION')
     args = parser.parse_args()
 
-    # if running in server mode
-    if args.listen:
-        pass
+	# if running in server mode
+	if args.listen:
+		pass
 
-    # if running in client mode
-else:
+	# if running in client mode
+	else:
 		pass
