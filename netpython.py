@@ -15,7 +15,7 @@ if __name__ == '__main__':
         help='initialize a command shell')
     parser.add_argument('-u', '--upload', nargs=1, metavar='DESTINATION',
         help='upon receiving a connection, upload a file and write \
-    to DESTINATION')
+              to DESTINATION')
     args = parser.parse_args()
 
     # if running in server mode
