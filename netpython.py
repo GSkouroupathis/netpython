@@ -23,5 +23,5 @@ if __name__ == '__main__':
         pass
 
     # if running in client mode
-	else:
+else:
 		pass
