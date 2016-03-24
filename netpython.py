@@ -3,7 +3,7 @@
 import sys, socket, argparse, threading, subprocess
 
 if __name__ == '__main__':
-	print 'main'
+    print 'main'
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--target', nargs=1, metavar='HOST')
     parser.add_argument('-p', '--port', nargs=1, metavar='PORT')
@@ -15,13 +15,13 @@ if __name__ == '__main__':
         help='initialize a command shell')
     parser.add_argument('-u', '--upload', nargs=1, metavar='DESTINATION',
         help='upon receiving a connection, upload a file and write \
-        to DESTINATION')
+    to DESTINATION')
     args = parser.parse_args()
 
-	# if running in server mode
-	if args.listen:
-		pass
+    # if running in server mode
+    if args.listen:
+        pass
 
-	# if running in client mode
-	else:
-		pass
+    # if running in client mode
+    else:
+        pass
