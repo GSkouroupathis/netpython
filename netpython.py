@@ -28,7 +28,6 @@ def read_from_stdin():
         raise
 
 def send_to_client(bffr):
-
     try:
 
         # send data if there is any
@@ -47,6 +46,7 @@ def send_to_client(bffr):
         print response
         print '****************************************************************'
         print
+        print
         return 'wat'
 
     except KeyboardInterrupt:
@@ -57,9 +57,80 @@ def send_to_client(bffr):
         print '[*] Exiting:', exc
         raise
 
+def start_server():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((args.target[0], args.port[0]))
+    server.listen(5)
+
+    while True:
+        client_socket, client_addr = server.accept()
+
+        # spin off a thread to handle our new client
+        client_thread = threading.Thread(target=client_handler,
+            args=(client_socket,))
+        client_thread.start()
+
+def client_handler(client_socket):
+    # check for upload
+    if args.upload:
+
+        # read in all the bytes and write to destination
+        file_buffer = ''
+        while True:
+            data = client_socket.recv(1024)
+            if not data:
+                break
+            else:
+                file_buffer += data
+
+        # write out the bytes
+        try:
+            file_descriptor = open(args.destination, 'wb')
+            file_descriptor.write(file_buffer)
+            file_descriptor.close()
+        except:
+            client_socket.send('Failed to upload file to %s\r\n'
+                % args.destination)
+
+    # check for command execution
+    if args.execute:
+
+        # run the command
+        output = run_command(args.execute)
+
+        client_socket.send(output)
+
+    # check for command shell request
+    if args.command:
+
+        while True:
+            # show prompt
+            client_socket.send('<server>$ ')
+            cmd_buffer = ''
+            while '\n' not in cmd_buffer:
+                cmd_buffer += client_socket.recv(1024)
+
+            # send back response to client
+            response = run_command(cmd_buffer)
+            client_socket.send(response)
+
+def run_command(command):
+    # trim the newline
+    command = command.rstrip()
+
+    # run the command and get the output back
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT,
+            shell=True)
+    except:
+        output = "Failed to execute command.\r\n"
+
+    # return the command output
+    return output
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--target', nargs=1, default='127.0.0.1',
+    parser.add_argument('-t', '--target', nargs=1, default='0.0.0.0',
         metavar='HOST')
     parser.add_argument('-p', '--port', nargs=1, default=1337, type=int,
         metavar='PORT')
@@ -74,17 +145,19 @@ if __name__ == '__main__':
               to DESTINATION')
     args = parser.parse_args()
 
+    print args
+
     # if running in server mode
     if args.listen:
-        pass
+        start_server()
 
     # if running in client mode
     else:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((args.target, args.port))
-
+        print args.target
+        print type(args.target)
+        print args.port
+        print type(args.port)
+        client.connect((args.target[0], args.port[0]))
         read_and_send()
-
         client.close()
-
-    print args
