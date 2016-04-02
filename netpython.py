@@ -2,36 +2,42 @@
 
 import sys, socket, argparse, threading, subprocess
 
-def read_and_send():
+def start_client():
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client.connect((args.target[0], args.port[0]))
+        read_and_send(client)
+    except:
+        print "[*] Client exited"
+        client.close()
+        raise
+
+def read_and_send(client):
     while True:
         try:
-            bffr = read_from_stdin()
-        except KeyboardInterrupt:
-            sys.exit(1)
-        try:
-            send_to_client(bffr)
-        except KeyboardInterrupt:
-            continue
+            bffr = read_from_stdin() + '\n'
+            send_to_client(client, bffr)
         except:
-            sys.exit(0)
+            raise
 
 def read_from_stdin():
     try:
-        print
-        print '___________________________ REQUEST ____________________________'
+        #bffr = sys.stdin.read()
         bffr = raw_input()
-        print '________________________________________________________________'
-        print
+        print repr(bffr)
         return bffr
     except KeyboardInterrupt:
-        print '[*] Aborted'
+        print '[*] Reading STDIN aborted'
         raise
 
-def send_to_client(bffr):
+def send_to_client(client, bffr):
+    print client
     try:
 
         # send data if there is any
+        print len(bffr)
         if len(bffr):
+            print len(bffr)
             client.send(bffr)
 
         # wait for data back
@@ -40,14 +46,14 @@ def send_to_client(bffr):
             response = client.recv(4096)
             if response and len(response) < 4096:
                 break
+            elif response:
+                print "Response here"
+            else:
+                print len(response)
+            sfdsfsdf=raw_input()
 
-        print
-        print '*************************** RESPONSE ***************************'
-        print response
-        print '****************************************************************'
-        print
-        print
-        return 'wat'
+        print response,
+        return
 
     except KeyboardInterrupt:
         print '[*] Transfer Aborted'
@@ -63,14 +69,36 @@ def start_server():
     server.listen(5)
 
     while True:
-        client_socket, client_addr = server.accept()
+        try:
+            client_socket, client_addr = server.accept()
 
-        # spin off a thread to handle our new client
-        client_thread = threading.Thread(target=client_handler,
-            args=(client_socket,))
-        client_thread.start()
+            # spin off a thread to handle our new client
+            client_thread = threading.Thread(target=client_handler,
+                args=(client_socket,))
+            client_thread.start()
+        except KeyboardInterrupt:
+            print '[*] Server exited'
+            raise
 
 def client_handler(client_socket):
+    # check for keepalive
+    if args.keepalive:
+
+        try:
+            while True:
+                # show prompt
+                data_buffer = ''
+                while '\n' not in data_buffer:
+                    data_buffer += client_socket.recv(1024)
+                    print data_buffer
+
+                print repr(data_buffer)
+
+                # send back response to client
+                client_socket.send('\n')
+        except:
+            pass
+
     # check for upload
     if args.upload:
 
@@ -136,6 +164,8 @@ if __name__ == '__main__':
         metavar='PORT')
     parser.add_argument('-l', '--listen', action='store_true',
         help='listen on [host]:[port] for incoming connections')
+    parser.add_argument('-k', '--keepalive', action='store_true',
+        help='keep alive the connection by responding with null packets')
     parser.add_argument('-e', '--execute', nargs=1, metavar='FILE',
         help='execute the given file upon receiving a connection')
     parser.add_argument('-c', '--command', action='store_true',
@@ -153,11 +183,4 @@ if __name__ == '__main__':
 
     # if running in client mode
     else:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print args.target
-        print type(args.target)
-        print args.port
-        print type(args.port)
-        client.connect((args.target[0], args.port[0]))
-        read_and_send()
-        client.close()
+        start_client()
